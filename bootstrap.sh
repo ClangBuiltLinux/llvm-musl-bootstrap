@@ -168,15 +168,19 @@ function build_libcxx () {
     -D LIBCXX_SYSROOT=$SYSROOT/usr/local \
     -D LIBCXX_HAS_MUSL_LIBC=YES \
     -D LIBCXX_USE_COMPILER_RT=YES \
-    --debug-trycompile \
+    -D LIBCXX_INCLUDE_BENCHMARKS=NO \
     -D CMAKE_EXE_LINKER_FLAGS="-rtlib=compiler-rt -resource-dir=$RESOURCE --sysroot=$RESOURCE" \
+    -D LIBCXX_SUPPORTS_NOSTDLIBXX_FLAG=NO \
     -G Ninja \
     -S ..
+    # TODO: should we add LIBCXX_BUILTINS_LIBRARY="${SYSROOT}/usr/local/lib/linux/libclang_rt.builtins-x86_64.a"
+    # as per @compnerd?
+    #--debug-trycompile \
     #-D CMAKE_C_COMPILER_WORKS=YES \
     #-D LIBCXX_LINK_FLAGS="-stdlib=libc++" \
     #-D LIBCXX_LINK_FLAGS="-nodefaultlibs -lc -rtlib=compiler-rt" \
   ninja libc++.so
-
+  DESTDIR=$SYSROOT ninja install-cxx install-cxx-headers
 
   popd
 }
@@ -187,8 +191,7 @@ bootstrap_compiler_rt
 ./musl.sh
 build_libunwind
 build_libcxxabi
-#TODO: this doesn't work yet
-#build_libcxx
+build_libcxx
 
 # Fangrui says try:
 # -DLLVM_HOST_TRIPLE= 

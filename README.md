@@ -32,6 +32,8 @@ sysroot
             ├── libc++abi.so.1.0
             ├── libcrypt.a
             ├── libc.so
+            ├── libc++.so.1 -> libc++.so.1.0
+            ├── libc++.so.1.0
             ├── libdl.a
             ├── libm.a
             ├── libpthread.a
@@ -43,6 +45,9 @@ sysroot
             ├── libutil.a
             ├── libxnet.a
             ├── linux
+            │   ├── clang_rt.crtbegin-x86_64.o
+            │   ├── clang_rt.crtend-x86_64.o
+            │   └── libclang_rt.builtins-x86_64.a
             ├── rcrt1.o
             └── Scrt1.o
 ```
