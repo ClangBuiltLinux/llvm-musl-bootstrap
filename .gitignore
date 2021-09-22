@@ -1,0 +1,6 @@
+linux/
+llvm-project/
+musl/
+
+sysroot/
+kernel-headers/
