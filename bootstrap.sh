@@ -1,7 +1,6 @@
 set -eu
 
 LLVM_URL=https://github.com/llvm/llvm-project.git
-LINUX_URL=https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 MUSL_URL=git://git.musl-libc.org/musl
 
 function update_llvm () {
@@ -21,35 +20,6 @@ function get_or_fetch_llvm () {
   else
     fetch_llvm
   fi;
-}
-
-function update_linux () {
-  pushd linux
-  git fetch --depth 1
-  git reset --hard origin/master
-  popd
-}
-
-function fetch_linux () {
-  git clone --depth=1 $LINUX_URL --branch master --single-branch
-}
-
-function get_or_fetch_linux_kernel () {
-  if [[ -d linux ]]; then
-    update_linux
-  else
-    fetch_linux
-  fi;
-}
-
-function build_kernel_headers () {
-  if [[ -d kernel-headers ]]; then
-    return
-  fi
-
-  pushd linux
-  make LLVM=1 INSTALL_HDR_PATH=../kernel-headers mrproper headers_install -j$(nproc)
-  popd
 }
 
 function bootstrap_compiler_rt () {
@@ -132,7 +102,6 @@ function build_musl () {
 
 #get_or_fetch_llvm
 bootstrap_compiler_rt
-#get_or_fetch_linux_kernel
-build_kernel_headers
+./kernel.sh
 #get_or_fetch_musl
 build_musl
