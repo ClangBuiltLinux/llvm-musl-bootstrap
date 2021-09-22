@@ -186,7 +186,7 @@ bootstrap_compiler_rt
 ./kernel.sh
 ./musl.sh
 build_libunwind
-#build_libcxxabi
+build_libcxxabi
 #TODO: this doesn't work yet
 #build_libcxx
 

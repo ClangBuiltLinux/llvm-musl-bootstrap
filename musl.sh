@@ -23,11 +23,11 @@ function get_or_fetch_musl () {
 
 function build_musl () {
   # TODO: something better than this...like if we updated musl.
-  if [[ -d sysroot/usr/local/include ]]; then
-    if [[ -n "$(find sysroot/usr/local/include -type f | wc -l)" ]]; then
-      return
-    fi;
-  fi;
+  #if [[ -d sysroot/usr/local/include ]]; then
+    #if [[ -n "$(find sysroot/usr/local/include -type f | wc -l)" ]]; then
+      #return
+    #fi;
+  #fi;
 
   BUILTINS=$(readlink -f sysroot/usr/local/lib/linux/libclang_rt.builtins-x86_64.a)
   CC=$(which clang)
