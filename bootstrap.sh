@@ -6,13 +6,21 @@ function update_llvm () {
   pushd llvm-project
   # hack for https://reviews.llvm.org/D97572.
   git fetch --depth 1 origin 3a6365a439ede4b7c65076bb42b1b7dbf72216b5
+  #git checkout FETCH_HEAD
   #git fetch --depth 1
   git reset --hard FETCH_HEAD
   popd
 }
 
 function fetch_llvm () {
-  git clone --depth=1 $LLVM_URL --branch main --single-branch
+  #git clone --depth=1 $LLVM_URL --branch main --single-branch
+  mkdir llvm-project
+  pushd llvm-project
+  git init
+  git remote add origin $LLVM_URL
+  git fetch --depth 1 origin 3a6365a439ede4b7c65076bb42b1b7dbf72216b5
+  git checkout FETCH_HEAD
+  popd
 }
 
 function get_or_fetch_llvm () {
@@ -85,6 +93,8 @@ function build_libunwind () {
   popd
 }
 
+# Saleem: c++abi is the libc equivalent for c++: it is the language runtime;
+# libc++ is the C++ standard library
 function build_libcxxabi () {
   SYSROOT=$(readlink -f sysroot/)
   RESOURCE=$(readlink -f sysroot/usr/local)
@@ -102,7 +112,7 @@ function build_libcxxabi () {
   fi
   popd
 
-  rm -rf llvm-project/libcxxabi/build #
+  #rm -rf llvm-project/libcxxabi/build #
   mkdir -p llvm-project/libcxxabi/build
   pushd llvm-project/libcxxabi/build
   # TODO: link with lld
@@ -134,9 +144,51 @@ function build_libcxxabi () {
   popd
 }
 
-#get_or_fetch_llvm
-#bootstrap_compiler_rt
-#./kernel.sh
-#./musl.sh
-#build_libunwind
-build_libcxxabi
+function build_libcxx () {
+  CC=$(which clang)
+  CXX=$(which clang++)
+  SYSROOT=$(readlink -f sysroot/)
+  RESOURCE=$(readlink -f sysroot/usr/local)
+
+  #rm -rf llvm-project/libcxx/build #
+  mkdir -p llvm-project/libcxx/build
+  pushd llvm-project/libcxx/build
+
+  # TODO: link with lld
+  cmake \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_CXX_COMPILER=$CXX \
+    -D CMAKE_CXX_COMPILER_TARGET=x86_64-unknown-linux-musl \
+    -D CMAKE_CXX_COMPILER_WORKS=YES \
+    -D CMAKE_C_COMPILER=$CC \
+    -D CMAKE_C_COMPILER_TARGET=x86_64-unknown-linux-musl \
+    -D LIBCXX_ENABLE_STATIC=NO \
+    -D LIBCXX_CXX_ABI=libcxxabi \
+    -D LIBCXX_TARGET_TRIPLE=x86_64-unknown-linux-musl \
+    -D LIBCXX_SYSROOT=$SYSROOT/usr/local \
+    -D LIBCXX_HAS_MUSL_LIBC=YES \
+    -D LIBCXX_USE_COMPILER_RT=YES \
+    --debug-trycompile \
+    -D CMAKE_EXE_LINKER_FLAGS="-rtlib=compiler-rt -resource-dir=$RESOURCE --sysroot=$RESOURCE" \
+    -G Ninja \
+    -S ..
+    #-D CMAKE_C_COMPILER_WORKS=YES \
+    #-D LIBCXX_LINK_FLAGS="-stdlib=libc++" \
+    #-D LIBCXX_LINK_FLAGS="-nodefaultlibs -lc -rtlib=compiler-rt" \
+  ninja libc++.so
+
+
+  popd
+}
+
+get_or_fetch_llvm
+bootstrap_compiler_rt
+./kernel.sh
+./musl.sh
+build_libunwind
+#build_libcxxabi
+#TODO: this doesn't work yet
+#build_libcxx
+
+# Fangrui says try:
+# -DLLVM_HOST_TRIPLE= 

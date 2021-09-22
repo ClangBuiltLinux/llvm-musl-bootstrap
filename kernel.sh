@@ -22,12 +22,10 @@ function get_or_fetch_linux_kernel () {
 }
 
 function build_kernel_headers () {
-  if [[ -d kernel-headers ]]; then
-    return
-  fi
+  SYSROOT=$(readlink -f sysroot)
 
   pushd linux
-  make LLVM=1 INSTALL_HDR_PATH=../kernel-headers mrproper headers_install -j$(nproc)
+  make LLVM=1 INSTALL_HDR_PATH=$SYSROOT/usr/local mrproper headers_install -j$(nproc)
   popd
 }
 
