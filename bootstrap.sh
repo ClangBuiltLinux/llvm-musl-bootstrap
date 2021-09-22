@@ -56,7 +56,34 @@ function bootstrap_compiler_rt () {
   popd
 }
 
+function build_libunwind () {
+  SYSROOT=$(readlink -f sysroot)
+  RESOURCE=$(readlink -f sysroot/usr/local)
+  CC=$(which clang)
+  CXX=$(which clang++)
+
+  mkdir -p llvm-project/libunwind/build
+  pushd llvm-project/libunwind/build
+  cmake -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_CXX_COMPILER=$CXX \
+    -D CMAKE_CXX_COMPILER_TARGET=x86_64-unknown-linux-musl \
+    -D CMAKE_C_COMPILER=$CC \
+    -D CMAKE_C_COMPILER_TARGET=x86_64-unknown-linux-musl \
+    -D CMAKE_SHARED_LINKER_FLAGS=-resource-dir=$RESOURCE \
+    -D LIBUNWIND_ENABLE_STATIC=NO \
+    -D LIBUNWIND_USE_COMPILER_RT=YES \
+    -D LIBUNWIND_INCLUDE_DOCS=NO \
+    -D LLVM_ENABLE_PROJECTS="libunwind" \
+    -D LLVM_TARGETS_TO_BUILD="X86;" \
+    -G Ninja \
+    -S ..
+  ninja libunwind.so
+  DESTDIR=$SYSROOT ninja install
+  popd
+}
+
 get_or_fetch_llvm
 bootstrap_compiler_rt
 ./kernel.sh
 ./musl.sh
+build_libunwind
