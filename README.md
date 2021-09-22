@@ -11,6 +11,42 @@ This work is heavily derived and derived entirely from Saleem Abdulrasool's
 (@compnerd)
 [gist](https://gist.github.com/compnerd/ebbc625a359d1d3e292e1fd2007ecb52).
 
+### Sysroot
+
+Builds a sysroot that looks like:
+```
+sysroot
+└── usr
+    └── local
+        ├── include
+        │   ├── ...
+        └── lib
+            ├── crt1.o
+            ├── crtbeginS.o -> linux/clang_rt.crtbegin-x86_64.o
+            ├── crtendS.o -> linux/clang_rt.crtend-x86_64.o
+            ├── crti.o
+            ├── crtn.o
+            ├── ld-musl-x86_64.so.1 -> libc.so
+            ├── libc++abi.so -> libc++abi.so.1
+            ├── libc++abi.so.1 -> libc++abi.so.1.0
+            ├── libc++abi.so.1.0
+            ├── libcrypt.a
+            ├── libc.so
+            ├── libdl.a
+            ├── libm.a
+            ├── libpthread.a
+            ├── libresolv.a
+            ├── librt.a
+            ├── libunwind.so -> libunwind.so.1
+            ├── libunwind.so.1 -> libunwind.so.1.0
+            ├── libunwind.so.1.0
+            ├── libutil.a
+            ├── libxnet.a
+            ├── linux
+            ├── rcrt1.o
+            └── Scrt1.o
+```
+
 ### License
 ```
 Copyright 2021 The ClangBuiltLinux project contributors
