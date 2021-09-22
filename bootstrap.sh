@@ -4,8 +4,10 @@ LLVM_URL=https://github.com/llvm/llvm-project.git
 
 function update_llvm () {
   pushd llvm-project
-  git fetch --depth 1
-  git reset --hard origin/main
+  # hack for https://reviews.llvm.org/D97572.
+  git fetch --depth 1 origin 3a6365a439ede4b7c65076bb42b1b7dbf72216b5
+  #git fetch --depth 1
+  git reset --hard FETCH_HEAD
   popd
 }
 
@@ -51,6 +53,7 @@ function bootstrap_compiler_rt () {
     #-D CMAKE_INSTALL_PREFIX=woof \
     #-D COMPILER_RT_INSTALL_PATH=woof \
     #-D COMPILER_RT_INSTALL_LIBRARY_DIR=woof \
+    #-D COMPILER_RT_BUILD_CRT=YES \
   ninja compiler-rt
   DESTDIR=$SYSROOT ninja install
   popd
@@ -82,8 +85,58 @@ function build_libunwind () {
   popd
 }
 
-get_or_fetch_llvm
-bootstrap_compiler_rt
-./kernel.sh
-./musl.sh
-build_libunwind
+function build_libcxxabi () {
+  SYSROOT=$(readlink -f sysroot/)
+  RESOURCE=$(readlink -f sysroot/usr/local)
+  LIBCXX=$(readlink -f llvm-project/libcxx)
+  CC=$(which clang)
+  CXX=$(which clang++)
+
+  # TODO: a hack
+  pushd sysroot/usr/local/lib
+  if [[ ! -e crtbeginS.o ]]; then
+    ln -s linux/clang_rt.crtbegin-x86_64.o crtbeginS.o
+  fi
+  if [[ ! -e crtendS.o ]]; then
+    ln -s linux/clang_rt.crtend-x86_64.o crtendS.o
+  fi
+  popd
+
+  rm -rf llvm-project/libcxxabi/build #
+  mkdir -p llvm-project/libcxxabi/build
+  pushd llvm-project/libcxxabi/build
+  # TODO: link with lld
+  cmake -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_CXX_COMPILER_WORKS=YES \
+    -D CMAKE_CXX_COMPILER=$CXX \
+    -D CMAKE_CXX_COMPILER_TARGET=x86_64-unknown-linux-musl \
+    -D CMAKE_C_COMPILER=$CC \
+    -D CMAKE_C_COMPILER_TARGET=x86_64-unknown-linux-musl \
+    -D LIBCXXABI_ENABLE_STATIC=NO \
+    -D LIBCXXABI_LIBCXX_INCLUDES=$LIBCXX/include \
+    -D LIBCXXABI_LIBCXX_PATH=$LIBCXX \
+    -D LIBCXXABI_TARGET_TRIPLE=x86_64-unknown-linux-musl \
+    -D LIBCXXABI_USE_COMPILER_RT=YES \
+    -D LIBCXXABI_USE_LLVM_UNWINDER=YES \
+    -D LIBCXXABI_SYSROOT=$RESOURCE \
+    -D LIBCXXABI_SUPPORTS_NOSTDLIBXX_FLAG=NO \
+    -D CMAKE_EXE_LINKER_FLAGS="-rtlib=compiler-rt -resource-dir=$RESOURCE --sysroot=$RESOURCE" \
+    -G Ninja \
+    -S ..
+    #-D CMAKE_SHARED_LINKER_FLAGS=-resource-dir=$RESOURCE \
+    #-D LLVM_ENABLE_PROJECTS="libcxxabi" \
+    #-D LLVM_TARGETS_TO_BUILD="X86;" \
+    # -D CMAKE_CXX_COMPILER_WORKS=YES seems like a hack, but we can't test
+    # what we haven't built yet.
+    #--debug-trycompile \
+  ninja libc++abi.so
+  DESTDIR=$SYSROOT ninja install
+  popd
+}
+
+#get_or_fetch_llvm
+#bootstrap_compiler_rt
+#./kernel.sh
+#./musl.sh
+#build_libunwind
+build_libcxxabi
