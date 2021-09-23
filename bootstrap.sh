@@ -73,6 +73,10 @@ function build_libunwind () {
   CC=$(which clang)
   CXX=$(which clang++)
 
+  # - LIBUNWIND_COMPILE_FLAGS: flags used to compile libunwind
+  # - LIBUNWIND_LINK_FLAGS: flags used to link libunwind
+  # - LIBUNWIND_LIBRARIES: libraries to link libunwind to.
+  rm -rf llvm-project/libunwind/build #
   mkdir -p llvm-project/libunwind/build
   pushd llvm-project/libunwind/build
   cmake -D CMAKE_BUILD_TYPE=Release \
@@ -82,12 +86,24 @@ function build_libunwind () {
     -D CMAKE_C_COMPILER_TARGET=x86_64-unknown-linux-musl \
     -D CMAKE_SHARED_LINKER_FLAGS=-resource-dir=$RESOURCE \
     -D LIBUNWIND_ENABLE_STATIC=NO \
-    -D LIBUNWIND_USE_COMPILER_RT=YES \
     -D LIBUNWIND_INCLUDE_DOCS=NO \
-    -D LLVM_ENABLE_PROJECTS="libunwind" \
+    -D LIBUNWIND_USE_COMPILER_RT=YES \
     -D LLVM_TARGETS_TO_BUILD="X86;" \
+    -D LIBUNWIND_TARGET_TRIPLE=x86_64-unknown-linux-musl \
+    -D LIBUNWIND_SYSROOT=$RESOURCE \
+    -D CMAKE_REQUIRED_FLAGS="-rtlib=compiler-rt -resource-dir=$RESOURCE" \
+    --debug-trycompile \
     -G Ninja \
     -S ..
+    #-D CMAKE_REQUIRED_LINK_OPTIONS="-rtlib=compiler-rt;-resource-dir=$RESOURCE" \
+    #-D CMAKE_EXE_LINKER_FLAGS="-Xlinker --dynamic-linker=$RESOURCE/lib/ld-musl-x86_64.so.1" \
+    #-D LIBUNWIND_COMPILE_FLAGS="-Xlinker --dynamic-linker=$RESOURCE/lib/ld-musl-x86_64.so.1" \
+    #-D LIBUNWIND_LINK_FLAGS="-Xlinker --dynamic-linker=$RESOURCE/lib/ld-musl-x86_64.so.1" \
+    #-D LIBUNWIND_LINK_FLAGS="--sysroot=$RESOURCE" \
+    #-D CMAKE_CXX_COMPILER_WORKS=YES \
+    #-D CMAKE_EXE_LINKER_FLAGS="-nostdlib" \
+    #-D LLVM_ENABLE_PROJECTS="libunwind" \
+    #-D CMAKE_EXE_LINKER_FLAGS="-resource-dir=$RESOURCE --sysroot=$RESOURCE" \
   ninja libunwind.so
   DESTDIR=$SYSROOT ninja install
   popd
