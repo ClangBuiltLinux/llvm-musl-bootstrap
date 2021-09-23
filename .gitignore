@@ -1,6 +1,8 @@
+# third party sources
+
 linux/
 llvm-project/
 musl/
 
+# build outputs
 sysroot/
-kernel-headers/
